@@ -28,8 +28,8 @@ pipeline {
         SERVICE_DIR    = "services/${params.SERVICE}-service"
         TRIVY_CACHE_DIR = '/tmp/trivy-cache'
 
-        SONAR_HOST = 'http://sonarqube:9000'
-        NEXUS_URL  = 'http://nexus:8081/repository/maven-releases/'
+        SONAR_HOST = 'http://54.152.168.160:9000'
+        NEXUS_URL  = 'http://54.152.168.160:8081/repository/maven-releases/'
 
         AWS_CREDS   = credentials('aws-ecr')
         GIT_CREDS   = credentials('gitops-repo')   // username + token that can push to the GitOps repo
