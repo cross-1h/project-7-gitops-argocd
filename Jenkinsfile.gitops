@@ -136,6 +136,13 @@ pipeline {
                         if [ "${SERVICE}" = "storefront" ]; then
                             echo "Skipping Nexus publish for storefront"
                         else
+                            echo "NEXUS_URL=${NEXUS_URL}"
+                            echo "NEXUS_USERNAME=${NEXUS_CREDS_USR}"
+                            if [ -n "${NEXUS_CREDS_PSW}" ]; then
+                                echo "NEXUS_PASSWORD is set"
+                            else
+                                echo "NEXUS_PASSWORD is empty"
+                            fi
                             mvn -B -ntp deploy:deploy-file \
                                 -Durl=${NEXUS_URL} \
                                 -DrepositoryId=nexus \
