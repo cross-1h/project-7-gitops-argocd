@@ -1,0 +1,43 @@
+# This is the object that tells ArgoCD what to manage.
+#
+# Read it as a sentence: "the manifests in THIS repo, at THIS path, belong in
+# THIS cluster and namespace, and you should keep them in sync automatically."
+#
+# Note that this file itself is a Kubernetes manifest that lives in git. Even
+# your ArgoCD configuration is version-controlled. That is the GitOps idea
+# applied to ArgoCD itself.
+#
+# EDIT: set repoURL to YOUR GitOps repository.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: shopflow
+  namespace: argocd
+  finalizers:
+    # Makes sure that deleting this Application also removes what it created,
+    # instead of leaving orphaned resources running (and billing) in the cluster.
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/cross-1h/shopflow-gitops.git
+    targetRevision: main
+    path: apps/shopflow          # the folder ArgoCD watches
+
+  destination:
+    server: https://kubernetes.default.svc   # this cluster
+    namespace: shopflow
+
+  syncPolicy:
+    automated:
+      prune: true      # delete a manifest from git -> ArgoCD deletes it from the cluster
+      selfHeal: true   # someone hand-edits the cluster -> ArgoCD puts it back
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 10s
+        maxDuration: 2m
+        factor: 2

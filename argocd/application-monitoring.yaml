@@ -1,0 +1,40 @@
+# A second Application, this time managing a third-party Helm chart (the
+# monitoring stack) rather than your own manifests.
+#
+# This shows something important: ArgoCD does not only deploy your app. The
+# whole platform, including the tools you run, becomes code in git. If someone
+# uninstalls Prometheus by hand, ArgoCD puts it back.
+#
+# This is optional in Project 7. Do it once the ShopFlow Application works.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: kube-prometheus-stack
+    targetRevision: 61.3.2
+    helm:
+      values: |
+        grafana:
+          adminPassword: admin
+        prometheus:
+          prometheusSpec:
+            serviceMonitorSelectorNilUsesHelmValues: false
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

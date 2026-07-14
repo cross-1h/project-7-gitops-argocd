@@ -1,0 +1,101 @@
+// Project 7: the GitOps pipeline.
+//
+// Compare this to your Project 6 Jenkinsfile. Everything up to "Push to ECR"
+// is identical. What changed is the ending:
+//
+//   Project 6 (push):  ... -> Push to ECR -> kubectl apply / helm upgrade
+//   Project 7 (pull):  ... -> Push to ECR -> COMMIT the new image tag to git
+//
+// Jenkins no longer has, or needs, any credentials for the cluster. It only
+// needs permission to push to the GitOps repository. ArgoCD does the deploy.
+
+pipeline {
+    agent any
+
+    parameters {
+        choice(name: 'SERVICE', choices: ['catalog', 'orders', 'notifications', 'storefront'], description: 'Which service to release')
+    }
+
+    environment {
+        AWS_REGION   = 'us-east-1'
+        ECR_ACCOUNT  = '922685583704'          // EDIT
+        GITOPS_REPO  = 'github.com/cross-1h/shopflow-gitops.git'  // EDIT
+
+        IMAGE_REPO   = "shopflow-${params.SERVICE}"
+        IMAGE_TAG    = "build-${BUILD_NUMBER}"
+        ECR_REGISTRY = "${ECR_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+        IMAGE        = "${ECR_REGISTRY}/${IMAGE_REPO}"
+
+        AWS_CREDS    = credentials('aws-ecr')
+        GIT_CREDS    = credentials('gitops-repo')   // username + token that can push to the GitOps repo
+    }
+
+    stages {
+        stage('Checkout app repo') {
+            steps { checkout scm }
+        }
+
+        stage('Build, test, scan') {
+            steps {
+                echo 'Reuse your Project 6 stages here: build, test + coverage, SonarQube gate, Trivy dependency scan.'
+                // dir("services/${params.SERVICE}-service") { sh 'mvn -B -ntp clean verify' }
+            }
+        }
+
+        stage('Docker build and scan') {
+            steps {
+                sh '''
+                    docker build -t ${IMAGE}:${IMAGE_TAG} services/${SERVICE}-service
+                    trivy image --severity CRITICAL --ignore-unfixed --exit-code 1 --no-progress ${IMAGE}:${IMAGE_TAG}
+                '''
+            }
+        }
+
+        stage('Push to ECR') {
+            steps {
+                sh '''
+                    export AWS_ACCESS_KEY_ID=$AWS_CREDS_USR
+                    export AWS_SECRET_ACCESS_KEY=$AWS_CREDS_PSW
+                    aws ecr get-login-password --region ${AWS_REGION} \
+                      | docker login --username AWS --password-stdin ${ECR_REGISTRY}
+                    docker push ${IMAGE}:${IMAGE_TAG}
+                '''
+            }
+        }
+
+        // ---- THE GITOPS STEP: this replaces the old deploy stage ----
+        stage('Update GitOps repo') {
+            steps {
+                sh '''
+                    rm -rf gitops && mkdir gitops
+                    git clone https://${GIT_CREDS_USR}:${GIT_CREDS_PSW}@${GITOPS_REPO} gitops
+                    cd gitops
+
+                    # Rewrite the image tag for this service in the desired state.
+                    sed -i "s|image: .*/${IMAGE_REPO}:.*|image: ${IMAGE}:${IMAGE_TAG}|" apps/shopflow/${SERVICE}.yaml
+
+                    git config user.email "jenkins@shopflow.local"
+                    git config user.name  "Jenkins"
+                    git add apps/shopflow/${SERVICE}.yaml
+
+                    # If the tag did not change there is nothing to commit, and that is fine.
+                    git diff --cached --quiet && echo "No change to commit." && exit 0
+
+                    git commit -m "release(${SERVICE}): ${IMAGE_TAG} [ci skip]"
+                    git push origin main
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Committed ${IMAGE}:${IMAGE_TAG} to the GitOps repo."
+            echo "Jenkins is done. ArgoCD will now sync the cluster to match git."
+            echo "Watch it: kubectl get application shopflow -n argocd -w"
+        }
+        failure {
+            echo 'A stage failed. Nothing was committed, so nothing will deploy.'
+        }
+    }
+}

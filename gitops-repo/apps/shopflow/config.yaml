@@ -1,0 +1,11 @@
+# Desired state, watched by ArgoCD. Changing this file and committing IS the deploy.
+#
+# EDIT: put your RDS Proxy endpoint host here (from Project 7 `terraform output rds_proxy_endpoint`).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: shopflow-config
+data:
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://shopflow-db-proxy.proxy-cq5ko8mysn3q.us-east-1.rds.amazonaws.com:5432/shopflow"
+  ORDER_EVENTS_QUEUE_NAME: "shopflow-order-events"
+  AWS_REGION: "us-east-1"
