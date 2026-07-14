@@ -141,7 +141,7 @@ pipeline {
                             export NEXUS_USERNAME=${NEXUS_CREDS_USR}
                             export NEXUS_PASSWORD=${NEXUS_CREDS_PSW}
                             mvn -B -ntp deploy:deploy-file \
-                                -s ../../cicd/settings-nexus.xml \
+                                -s ${WORKSPACE}/settings-nexus.xml \
                                 -Durl=${NEXUS_REPO_URL} \
                                 -DrepositoryId=nexus \
                                 -Dfile=target/app.jar \
