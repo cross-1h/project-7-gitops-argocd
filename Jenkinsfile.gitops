@@ -191,7 +191,7 @@ pipeline {
                     cd gitops
 
                     # Rewrite the image tag for this service in the desired state.
-                    sed -i "s|image: .*/${IMAGE_REPO}:.*|image: ${IMAGE}:${IMAGE_TAG}|" apps/shopflow/${SERVICE}.yaml
+                    sed -i.bak "s|IMAGE_TAG_PLACEHOLDER|${IMAGE_TAG}|g" apps/shopflow/${SERVICE}.yaml && rm apps/shopflow/${SERVICE}.yaml.bak
 
                     git config user.email "jenkins@shopflow.local"
                     git config user.name  "Jenkins"
