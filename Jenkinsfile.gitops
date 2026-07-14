@@ -22,7 +22,7 @@ pipeline {
         GITOPS_REPO  = 'github.com/cross-1h/shopflow-gitops.git'  // EDIT
 
         IMAGE_REPO     = "shopflow-${params.SERVICE}"
-        IMAGE_TAG      = "build-${BUILD_NUMBER}"
+        IMAGE_TAG      = "${BUILD_NUMBER}-${GIT_COMMIT.take(8)}"
         ECR_REGISTRY   = "${ECR_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com"
         IMAGE          = "${ECR_REGISTRY}/${IMAGE_REPO}"
         SERVICE_DIR    = "services/${params.SERVICE}-service"
