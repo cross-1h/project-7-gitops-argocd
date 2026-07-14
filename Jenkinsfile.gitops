@@ -136,19 +136,16 @@ pipeline {
                         if [ "${SERVICE}" = "storefront" ]; then
                             echo "Skipping Nexus publish for storefront"
                         else
-                            echo "NEXUS_URL=${NEXUS_URL}"
-                            echo "NEXUS_USERNAME=${NEXUS_CREDS_USR}"
-                            if [ -n "${NEXUS_CREDS_PSW}" ]; then
-                                echo "NEXUS_PASSWORD is set"
-                            else
-                                echo "NEXUS_PASSWORD is empty"
-                            fi
+                            NEXUS_REPO_URL="${NEXUS_URL}"
+                            echo "Using Nexus URL: ${NEXUS_REPO_URL}"
+                            export NEXUS_USERNAME=${NEXUS_CREDS_USR}
+                            export NEXUS_PASSWORD=${NEXUS_CREDS_PSW}
                             mvn -B -ntp deploy:deploy-file \
-                                -Durl=${NEXUS_URL} \
+                                -s ../../cicd/settings-nexus.xml \
+                                -Durl=${NEXUS_REPO_URL} \
                                 -DrepositoryId=nexus \
                                 -Dfile=target/app.jar \
-                                -DgroupId=com.shopflow -DartifactId=${SERVICE}-service -Dversion=1.0.${BUILD_NUMBER} -Dpackaging=jar \
-                                -Dusername=${NEXUS_CREDS_USR} -Dpassword=${NEXUS_CREDS_PSW}
+                                -DgroupId=com.shopflow -DartifactId=${SERVICE}-service -Dversion=1.0.${BUILD_NUMBER} -Dpackaging=jar
                         fi
                     '''
                 }
