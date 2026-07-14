@@ -21,13 +21,20 @@ pipeline {
         ECR_ACCOUNT  = '922685583704'          // EDIT
         GITOPS_REPO  = 'github.com/cross-1h/shopflow-gitops.git'  // EDIT
 
-        IMAGE_REPO   = "shopflow-${params.SERVICE}"
-        IMAGE_TAG    = "build-${BUILD_NUMBER}"
-        ECR_REGISTRY = "${ECR_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-        IMAGE        = "${ECR_REGISTRY}/${IMAGE_REPO}"
+        IMAGE_REPO     = "shopflow-${params.SERVICE}"
+        IMAGE_TAG      = "build-${BUILD_NUMBER}"
+        ECR_REGISTRY   = "${ECR_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+        IMAGE          = "${ECR_REGISTRY}/${IMAGE_REPO}"
+        SERVICE_DIR    = "services/${params.SERVICE}-service"
+        TRIVY_CACHE_DIR = '/tmp/trivy-cache'
 
-        AWS_CREDS    = credentials('aws-ecr')
-        GIT_CREDS    = credentials('gitops-repo')   // username + token that can push to the GitOps repo
+        SONAR_HOST = 'http://sonarqube:9000'
+        NEXUS_URL  = 'http://nexus:8081/repository/maven-releases/'
+
+        AWS_CREDS   = credentials('aws-ecr')
+        GIT_CREDS   = credentials('gitops-repo')   // username + token that can push to the GitOps repo
+        SONAR_TOKEN = credentials('sonar-token')
+        NEXUS_CREDS = credentials('nexus')
     }
 
     stages {
@@ -35,18 +42,125 @@ pipeline {
             steps { checkout scm }
         }
 
-        stage('Build, test, scan') {
+        stage('Clean workspace and caches') {
             steps {
-                echo 'Reuse your Project 6 stages here: build, test + coverage, SonarQube gate, Trivy dependency scan.'
-                // dir("services/${params.SERVICE}-service") { sh 'mvn -B -ntp clean verify' }
+                sh '''
+                    set -e
+                    rm -rf ${SERVICE_DIR}/target ${SERVICE_DIR}/.scannerwork
+                    rm -rf /tmp/trivy-${SERVICE}-${BUILD_NUMBER}
+                    mkdir -p ${TRIVY_CACHE_DIR}
+                '''
             }
         }
 
-        stage('Docker build and scan') {
+        stage('Build') {
+            steps {
+                dir("${SERVICE_DIR}") {
+                    sh '''
+                        if [ "${SERVICE}" = "storefront" ]; then
+                            if [ -f package-lock.json ]; then
+                                npm ci
+                            else
+                                npm install
+                            fi
+                            npm run build
+                        else
+                            mvn -B -ntp clean compile
+                        fi
+                    '''
+                }
+            }
+        }
+
+        stage('Test + Coverage') {
+            steps {
+                dir("${SERVICE_DIR}") {
+                    sh '''
+                        if [ "${SERVICE}" = "storefront" ]; then
+                            echo "Skipping test + coverage for storefront"
+                        else
+                            mvn -B -ntp test
+                        fi
+                    '''
+                }
+            }
+            post {
+                always {
+                    junit allowEmptyResults: true, testResults: "${SERVICE_DIR}/target/surefire-reports/*.xml"
+                }
+            }
+        }
+
+        stage('Code Analysis (SonarQube)') {
+            steps {
+                dir("${SERVICE_DIR}") {
+                    sh '''
+                        if [ "${SERVICE}" = "storefront" ]; then
+                            echo "Skipping SonarQube analysis for storefront"
+                        else
+                            mvn -B -ntp sonar:sonar \
+                                -Dsonar.host.url=${SONAR_HOST} \
+                                -Dsonar.token=${SONAR_TOKEN} \
+                                -Dsonar.projectKey=shopflow-${SERVICE} \
+                                -Dsonar.qualitygate.wait=true
+                        fi
+                    '''
+                }
+            }
+        }
+
+        stage('Dependency Scan (Trivy)') {
+            steps {
+                sh "trivy fs --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 --no-progress ${SERVICE_DIR}"
+            }
+        }
+
+        stage('Package') {
+            steps {
+                dir("${SERVICE_DIR}") {
+                    sh '''
+                        if [ "${SERVICE}" = "storefront" ]; then
+                            echo "Storefront already built during Build stage"
+                        else
+                            mvn -B -ntp package -DskipTests
+                        fi
+                    '''
+                }
+            }
+        }
+
+        stage('Publish artifact to Nexus') {
+            steps {
+                dir("${SERVICE_DIR}") {
+                    sh '''
+                        if [ "${SERVICE}" = "storefront" ]; then
+                            echo "Skipping Nexus publish for storefront"
+                        else
+                            mvn -B -ntp deploy:deploy-file \
+                                -Durl=${NEXUS_URL} \
+                                -DrepositoryId=nexus \
+                                -Dfile=target/app.jar \
+                                -DgroupId=com.shopflow -DartifactId=${SERVICE}-service -Dversion=1.0.${BUILD_NUMBER} -Dpackaging=jar \
+                                -Dusername=${NEXUS_CREDS_USR} -Dpassword=${NEXUS_CREDS_PSW}
+                        fi
+                    '''
+                }
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                dir("${SERVICE_DIR}") {
+                    sh 'docker build -t ${IMAGE}:${IMAGE_TAG} -t ${IMAGE}:latest .'
+                }
+            }
+        }
+
+        stage('Image Scan (Trivy)') {
             steps {
                 sh '''
-                    docker build -t ${IMAGE}:${IMAGE_TAG} services/${SERVICE}-service
-                    trivy image --severity CRITICAL --ignore-unfixed --exit-code 1 --no-progress ${IMAGE}:${IMAGE_TAG}
+                    mkdir -p ${TRIVY_CACHE_DIR}
+                    trivy image --scanners vuln --severity CRITICAL --ignore-unfixed --exit-code 1 --no-progress --cache-dir ${TRIVY_CACHE_DIR} ${IMAGE}:${IMAGE_TAG}
                 '''
             }
         }
@@ -56,9 +170,10 @@ pipeline {
                 sh '''
                     export AWS_ACCESS_KEY_ID=$AWS_CREDS_USR
                     export AWS_SECRET_ACCESS_KEY=$AWS_CREDS_PSW
-                    aws ecr get-login-password --region ${AWS_REGION} \
-                      | docker login --username AWS --password-stdin ${ECR_REGISTRY}
+                    aws ecr describe-repositories --region ${AWS_REGION} --repository-names ${IMAGE_REPO} || aws ecr create-repository --region ${AWS_REGION} --repository-name ${IMAGE_REPO}
+                    aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}
                     docker push ${IMAGE}:${IMAGE_TAG}
+                    docker push ${IMAGE}:latest
                 '''
             }
         }
