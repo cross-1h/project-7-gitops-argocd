@@ -1,0 +1,6 @@
+# Generated report outputs
+*.docx
+*.pdf
+
+# Local alternate README used for drafting
+README1.md

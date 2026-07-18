@@ -1,0 +1,262 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 980">
+  <defs>
+    <style>
+      .title  { font: 700 27px 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
+      .sub    { font: 400 13px 'Segoe UI', Arial, sans-serif; fill: #64748b; }
+      .sec    { font: 700 13px 'Segoe UI', Arial, sans-serif; fill: #1e3a5f; }
+      .lbl    { font: 700 12px 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
+      .sm     { font: 400 11px 'Segoe UI', Arial, sans-serif; fill: #334155; }
+      .xs     { font: 400 10px 'Segoe UI', Arial, sans-serif; fill: #475569; }
+      .al-ci  { font: 600 10px 'Segoe UI', Arial, sans-serif; fill: #0369a1; }
+      .al-go  { font: 600 10px 'Segoe UI', Arial, sans-serif; fill: #15803d; }
+      .al-rt  { font: 600 10px 'Segoe UI', Arial, sans-serif; fill: #64748b; }
+    </style>
+    <marker id="ab" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+      <polygon points="0 0, 9 3.5, 0 7" fill="#0369a1"/>
+    </marker>
+    <marker id="ag" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+      <polygon points="0 0, 9 3.5, 0 7" fill="#15803d"/>
+    </marker>
+    <marker id="ar" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+      <polygon points="0 0, 9 3.5, 0 7" fill="#475569"/>
+    </marker>
+    <marker id="ao" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#c2410c"/>
+    </marker>
+    <marker id="an" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+      <polygon points="0 0, 9 3.5, 0 7" fill="#7c3aed"/>
+    </marker>
+  </defs>
+
+  <!-- canvas -->
+  <rect x="0" y="0" width="1600" height="980" fill="#f1f5f9"/>
+  <rect x="18" y="16" width="1564" height="948" fill="#ffffff" stroke="#cbd5e1" stroke-width="2" rx="16"/>
+
+  <!-- title -->
+  <text x="800" y="56" text-anchor="middle" class="title">ShopFlow GitOps + EKS Architecture</text>
+  <text x="800" y="80" text-anchor="middle" class="sub">Project: project-7-gitops-argocd  ·  Pull-based delivery model with ArgoCD</text>
+
+  <!-- LEFT PANEL -->
+  <rect x="38" y="100" width="378" height="598" rx="12"
+        fill="#ecfeff" stroke="#0891b2" stroke-width="1.5" stroke-dasharray="6 3"/>
+  <text x="58" y="124" class="sec">Source · CI/CD · Desired State</text>
+
+  <!-- App Repository -->
+  <rect x="62" y="143" width="330" height="80" rx="10"
+        fill="#ffffff" stroke="#0284c7" stroke-width="2"/>
+  <text x="227" y="174" text-anchor="middle" class="lbl">Application Repository</text>
+  <text x="227" y="195" text-anchor="middle" class="sm">Microservice source code + Jenkinsfiles</text>
+
+  <!-- Jenkins -->
+  <rect x="62" y="268" width="330" height="86" rx="10"
+        fill="#ffffff" stroke="#0369a1" stroke-width="2"/>
+  <text x="227" y="300" text-anchor="middle" class="lbl">Jenkins Pipelines</text>
+  <text x="227" y="320" text-anchor="middle" class="sm">Build · test · scan · push image to ECR</text>
+  <text x="227" y="337" text-anchor="middle" class="xs">No direct cluster access</text>
+
+  <!-- GitOps Repository -->
+  <rect x="62" y="404" width="330" height="84" rx="10"
+        fill="#ffffff" stroke="#0e7490" stroke-width="2"/>
+  <text x="227" y="436" text-anchor="middle" class="lbl">GitOps Repository (shopflow-gitops)</text>
+  <text x="227" y="456" text-anchor="middle" class="sm">Desired Kubernetes manifests only</text>
+  <text x="227" y="473" text-anchor="middle" class="xs">Every commit = deployment intent</text>
+
+  <!-- Trust Boundary -->
+  <rect x="62" y="524" width="330" height="158" rx="10"
+        fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+  <text x="227" y="552" text-anchor="middle" class="lbl" style="fill:#c2410c">Trust Boundary</text>
+  <line x1="76" y1="560" x2="378" y2="560" stroke="#fdba74" stroke-width="1"/>
+  <text x="227" y="580" text-anchor="middle" class="sm">Jenkins has no cluster credentials.</text>
+  <text x="227" y="599" text-anchor="middle" class="sm">Only ArgoCD (running inside the cluster)</text>
+  <text x="227" y="618" text-anchor="middle" class="sm">reads Git and applies changes.</text>
+  <text x="227" y="645" text-anchor="middle" class="xs" style="fill:#9a3412">Blast radius: if Jenkins is compromised,</text>
+  <text x="227" y="661" text-anchor="middle" class="xs" style="fill:#9a3412">it cannot directly mutate the cluster.</text>
+
+  <!-- App Repo -> Jenkins -->
+  <line x1="227" y1="223" x2="227" y2="268"
+        stroke="#0369a1" stroke-width="2.5" marker-end="url(#ab)"/>
+  <text x="238" y="248" class="al-ci">triggers</text>
+
+  <!-- Jenkins -> GitOps Repo -->
+  <line x1="227" y1="354" x2="227" y2="404"
+        stroke="#0369a1" stroke-width="2.5" marker-end="url(#ab)"/>
+  <text x="238" y="381" class="al-ci">commit tag</text>
+
+  <!-- AWS OUTER -->
+  <rect x="430" y="100" width="1132" height="675" rx="12"
+        fill="#fffbeb" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="7 4"/>
+  <text x="450" y="122" class="sec" style="fill:#b45309">AWS (us-east-1) — Provisioned by Terraform</text>
+
+  <!-- ECR -->
+  <rect x="453" y="262" width="244" height="82" rx="10"
+        fill="#ffffff" stroke="#f97316" stroke-width="2"/>
+  <text x="575" y="296" text-anchor="middle" class="lbl">Amazon ECR</text>
+  <text x="575" y="316" text-anchor="middle" class="sm">Container image registry</text>
+  <text x="575" y="333" text-anchor="middle" class="xs">4 repos: catalog · orders · notif. · storefront</text>
+
+  <!-- SQS -->
+  <rect x="453" y="460" width="244" height="80" rx="10"
+        fill="#ffffff" stroke="#16a34a" stroke-width="2"/>
+  <text x="575" y="493" text-anchor="middle" class="lbl">Amazon SQS</text>
+  <text x="575" y="513" text-anchor="middle" class="sm">shopflow-order-events queue</text>
+
+  <!-- Jenkins -> ECR (horizontal push) -->
+  <line x1="392" y1="311" x2="453" y2="311"
+        stroke="#0369a1" stroke-width="2.5" marker-end="url(#ab)"/>
+  <text x="406" y="304" class="al-ci">push image</text>
+
+  <!-- VPC -->
+  <rect x="728" y="184" width="806" height="572" rx="10"
+        fill="#fef3c7" stroke="#d97706" stroke-width="1.5" stroke-dasharray="6 3"/>
+  <text x="748" y="205" class="xs" style="fill:#92400e">VPC (10.0.0.0/16) — 2 Availability Zones — public + private subnets</text>
+
+  <!-- Internet-facing ALB -->
+  <rect x="752" y="214" width="748" height="58" rx="10"
+        fill="#f0fdf4" stroke="#15803d" stroke-width="2"/>
+  <text x="1126" y="239" text-anchor="middle" class="lbl" style="fill:#14532d">Internet-facing ALB</text>
+  <text x="1126" y="258" text-anchor="middle" class="sm">TLS termination · ingress routing into cluster services</text>
+
+  <!-- EKS CLUSTER -->
+  <rect x="752" y="284" width="748" height="358" rx="10"
+        fill="#dbeafe" stroke="#2563eb" stroke-width="2" stroke-dasharray="6 3"/>
+  <text x="774" y="307" class="sec" style="fill:#1e3a8a">EKS Cluster: shopflow  (Kubernetes 1.30)</text>
+
+  <!-- ArgoCD card -->
+  <rect x="776" y="318" width="700" height="130" rx="10"
+        fill="#fff7ed" stroke="#c2410c" stroke-width="2"/>
+  <text x="1126" y="339" text-anchor="middle" class="lbl" style="fill:#7c2d12">ArgoCD — argocd namespace — continuous reconciliation loop</text>
+
+  <!-- Observe sub-card -->
+  <rect x="791" y="350" width="196" height="82" rx="8"
+        fill="#fef9c3" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="889" y="376" text-anchor="middle" class="lbl" style="fill:#c2410c">1 · Observe</text>
+  <text x="889" y="395" text-anchor="middle" class="xs">Watch Git repo and live</text>
+  <text x="889" y="410" text-anchor="middle" class="xs">cluster state continuously</text>
+
+  <!-- Compare sub-card -->
+  <rect x="1003" y="350" width="196" height="82" rx="8"
+        fill="#fef9c3" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="1101" y="376" text-anchor="middle" class="lbl" style="fill:#c2410c">2 · Compare</text>
+  <text x="1101" y="395" text-anchor="middle" class="xs">Diff desired (Git)</text>
+  <text x="1101" y="410" text-anchor="middle" class="xs">vs live cluster state</text>
+
+  <!-- Sync sub-card -->
+  <rect x="1215" y="350" width="240" height="82" rx="8"
+        fill="#fef9c3" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="1335" y="376" text-anchor="middle" class="lbl" style="fill:#c2410c">3 · Sync + Self-Heal</text>
+  <text x="1335" y="395" text-anchor="middle" class="xs">Apply diff · prune orphans</text>
+  <text x="1335" y="410" text-anchor="middle" class="xs">Revert any live drift</text>
+
+  <!-- Arrows between ArgoCD sub-cards -->
+  <line x1="987" y1="391" x2="1003" y2="391"
+        stroke="#c2410c" stroke-width="1.5" marker-end="url(#ao)"/>
+  <line x1="1199" y1="391" x2="1215" y2="391"
+        stroke="#c2410c" stroke-width="1.5" marker-end="url(#ao)"/>
+
+  <!-- ArgoCD -> Services apply -->
+  <line x1="1126" y1="448" x2="1126" y2="464"
+        stroke="#c2410c" stroke-width="2.5" marker-end="url(#ao)"/>
+  <text x="1138" y="460" class="xs" style="fill:#c2410c">apply</text>
+
+  <!-- Service cards -->
+  <!-- Storefront -->
+  <rect x="776" y="468" width="148" height="80" rx="8"
+        fill="#ffffff" stroke="#1d4ed8" stroke-width="2"/>
+  <text x="850" y="498" text-anchor="middle" class="lbl">Storefront</text>
+  <text x="850" y="516" text-anchor="middle" class="xs">React · Nginx</text>
+  <text x="850" y="531" text-anchor="middle" class="xs">2 replicas</text>
+
+  <!-- Orders -->
+  <rect x="938" y="468" width="148" height="80" rx="8"
+        fill="#ffffff" stroke="#1d4ed8" stroke-width="2"/>
+  <text x="1012" y="498" text-anchor="middle" class="lbl">Orders</text>
+  <text x="1012" y="516" text-anchor="middle" class="xs">Spring Boot · Order API</text>
+  <text x="1012" y="531" text-anchor="middle" class="xs">2 replicas</text>
+
+  <!-- Catalog -->
+  <rect x="1100" y="468" width="148" height="80" rx="8"
+        fill="#ffffff" stroke="#1d4ed8" stroke-width="2"/>
+  <text x="1174" y="498" text-anchor="middle" class="lbl">Catalog</text>
+  <text x="1174" y="516" text-anchor="middle" class="xs">Spring Boot · Product API</text>
+  <text x="1174" y="531" text-anchor="middle" class="xs">2 replicas</text>
+
+  <!-- Notifications -->
+  <rect x="1262" y="468" width="166" height="80" rx="8"
+        fill="#ffffff" stroke="#1d4ed8" stroke-width="2"/>
+  <text x="1345" y="498" text-anchor="middle" class="lbl">Notifications</text>
+  <text x="1345" y="516" text-anchor="middle" class="xs">Spring Boot · SQS consumer</text>
+  <text x="1345" y="531" text-anchor="middle" class="xs">1 replica</text>
+
+  <!-- Data tier -->
+  <!-- RDS -->
+  <rect x="752" y="664" width="224" height="82" rx="10"
+        fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+  <text x="864" y="697" text-anchor="middle" class="lbl">Amazon RDS</text>
+  <text x="864" y="716" text-anchor="middle" class="sm">PostgreSQL · db.t3.micro</text>
+  <text x="864" y="733" text-anchor="middle" class="xs">shopflow database</text>
+
+  <!-- RDS Proxy -->
+  <rect x="1002" y="664" width="188" height="82" rx="10"
+        fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+  <text x="1096" y="697" text-anchor="middle" class="lbl">RDS Proxy</text>
+  <text x="1096" y="716" text-anchor="middle" class="sm">Connection pooling</text>
+  <text x="1096" y="733" text-anchor="middle" class="xs">Prevents exhaustion</text>
+
+  <!-- Secrets Manager -->
+  <rect x="1216" y="664" width="214" height="82" rx="10"
+        fill="#ffffff" stroke="#b91c1c" stroke-width="2"/>
+  <text x="1323" y="697" text-anchor="middle" class="lbl">Secrets Manager</text>
+  <text x="1323" y="716" text-anchor="middle" class="sm">Stores proxy credentials</text>
+  <text x="1323" y="733" text-anchor="middle" class="xs">Accessed via IAM role</text>
+
+  <!-- FLOW ARROWS -->
+
+  <!-- ECR -> Storefront left edge (pull image) -->
+  <line x1="697" y1="311" x2="776" y2="507"
+        stroke="#0369a1" stroke-width="2" marker-end="url(#ab)"/>
+  <text x="716" y="396" class="al-ci">pull image</text>
+
+  <!-- GitOps Repo -> ArgoCD left edge (ArgoCD pulls) -->
+  <line x1="392" y1="447" x2="776" y2="380"
+        stroke="#15803d" stroke-width="2.5" marker-end="url(#ag)"/>
+  <text x="558" y="401" class="al-go">ArgoCD pulls</text>
+
+  <!-- Orders left -> SQS right (publish, horizontal) -->
+  <line x1="938" y1="505" x2="697" y2="505"
+        stroke="#475569" stroke-width="2" marker-end="url(#ar)"/>
+  <text x="793" y="498" class="al-rt">publish</text>
+
+  <!-- SQS -> Notifications (consume, routed below service cards) -->
+  <polyline points="697,520 697,560 1262,560 1262,548"
+            fill="none" stroke="#475569" stroke-width="2" marker-end="url(#ar)"/>
+  <text x="958" y="553" class="al-rt">consume</text>
+
+  <!-- Services -> RDS Proxy (JDBC, vertical) -->
+  <line x1="1096" y1="548" x2="1096" y2="664"
+        stroke="#475569" stroke-width="2" marker-end="url(#ar)"/>
+  <text x="1108" y="608" class="al-rt">JDBC</text>
+
+  <!-- RDS Proxy left -> RDS right (proxied) -->
+  <line x1="1002" y1="705" x2="976" y2="705"
+        stroke="#475569" stroke-width="2" marker-end="url(#ar)"/>
+  <text x="980" y="698" class="al-rt">proxied</text>
+
+  <!-- Secrets Manager left -> RDS Proxy right (creds) -->
+  <line x1="1216" y1="705" x2="1190" y2="705"
+        stroke="#475569" stroke-width="2" marker-end="url(#ar)"/>
+  <text x="1192" y="698" class="al-rt">creds</text>
+
+  <!-- Nexus Artifact Repository (below left panel, outside AWS) -->
+  <rect x="62" y="720" width="250" height="72" rx="10"
+        fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+  <text x="187" y="752" text-anchor="middle" class="lbl" style="fill:#5b21b6">Nexus Repository</text>
+  <text x="187" y="771" text-anchor="middle" class="sm">Build artifact store (JARs)</text>
+
+  <!-- Jenkins -> Nexus (publish JAR)
+       Routes left out of panel at x=26 (between outer frame and panel border),
+       then straight down, then right into Nexus left-centre. Nothing existing is touched. -->
+  <polyline points="62,311 26,311 26,756 62,756"
+            fill="none" stroke="#7c3aed" stroke-width="2" marker-end="url(#an)"/>
+  <text x="30" y="714" class="al-ci" style="fill:#7c3aed">publish JAR</text>
+
+</svg>

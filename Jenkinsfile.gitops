@@ -183,6 +183,7 @@ pipeline {
         }
 
         // ---- THE GITOPS STEP: this replaces the old deploy stage ----
+        // Remove or avoid any kubectl commands, any helm commands, and any stage that deploys or applies manifests directly to the cluster.
         stage('Update GitOps repo') {
             steps {
                 sh '''
